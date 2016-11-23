@@ -526,7 +526,6 @@ while True:
 
 
 
-
 					# User did precisely the only thing we told them not to do.
 					elif auth_body == "help my house is burning down":
 						send_priv(auth_user,"That's hilarious. You're hilarious.")
@@ -593,10 +592,6 @@ while True:
 						elif " op" in auth_body.lower() or "op " in auth_body.lower():
 							send_priv(auth_user,"Op a user in a channel. Note this is more temporary and *not* the same as setting a chanop.")
 							send_priv(auth_user,"Syntax: /msg " + botnick + " op <user> <channel>")
-
-						elif " deop" in auth_body.lower() or "deop " in auth_body.lower():
-							send_priv(auth_user,"Deop a user in a channel.  Note this does not remove chanop status.")
-							send_priv(auth_user,"Syntax: /msg " + botnick + " deop <user> <channel>")
 
 						elif " deop" in auth_body.lower() or "deop " in auth_body.lower():
 							send_priv(auth_user,"Deop a user in a channel.  Note this does not remove chanop status.")
