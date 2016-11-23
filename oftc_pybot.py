@@ -41,7 +41,6 @@ import getpass
 
 
 
-
 #----------Begin initial variables/settings----------#
 #------------UNCOMMENT OPTIONS TO RUN BOT------------#
 debugging = True
@@ -66,7 +65,6 @@ rival=""
 goodnight_string=#A string that shuts down the bot when heard from a master_user.
 
 #----------End initial variables/settings----------#
-
 
 
 
@@ -116,7 +114,6 @@ def set_member(user,chan):
 
 
 
-
 #----------Begin connection section----------#
 
 #Define socket as an ipv4 stream.
@@ -157,7 +154,6 @@ irc.send(bytes("USER "+ botnick + " " + "0" + " " + "*" + " :" + botnick + "\r\n
 
 
 
-
 #----------Begin post-connection initializations----------#
 
 # Identify to nickserv.
@@ -191,16 +187,11 @@ for i in master_channels:
 
 
 
-
 #----------Begin main loop----------#
 
 while True:
 	# How often we check files/input.
 	time.sleep(.1)
-
-
-
-
 
 	#----------Begin input/output sequence----------#
 	
@@ -341,6 +332,7 @@ while True:
 					time.sleep(3)
 					send_priv(rival,"Pleeeeease? I'm sorry. You win. You're better than me.")
 
+			# Shouldn't his feet move if he is, in fact, lollersk8ing?
 			if bad_user==-3:
 				send_priv(rival,"       /\\O")
 				time.sleep(1)
@@ -424,7 +416,6 @@ while True:
 
 
 
-
 				#----------Begin authenticated commands section----------#
 
 				else:
@@ -432,7 +423,14 @@ while True:
 					# TODO: How hard to abuse?
 
 					# Received correct authentication in same sequence it was looked for.
-					
+
+					# Assign once so we're not splitting over and over during checks.
+					auth_body_words=auth_body.split()
+
+					is_command = len(auth_body_words)==3
+
+
+
 
 					#----------Begin teasing rival----------#
 					if bad_user==1:
@@ -526,6 +524,9 @@ while True:
 
 					#----------End teasing rival----------#
 
+
+
+
 					# User did precisely the only thing we told them not to do.
 					elif auth_body == "help my house is burning down":
 						send_priv(auth_user,"That's hilarious. You're hilarious.")
@@ -584,10 +585,32 @@ while True:
 						elif " member" in auth_body.lower() or "member " in auth_body.lower():
 							send_priv(auth_user,"Set a user as a member in a channel. Careful! Overrides channel chanop and master settings.")
 							send_priv(auth_user,"Syntax: /msg " + botnick + " member <user> <channel>")
+
+						elif " kick" in auth_body.lower() or "kick " in auth_body.lower():
+							send_priv(auth_user,"Have me kick a user from a room.  Currently, the reason is static and set to \"bant\"")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " kick <user> <channel>")
+
+						elif " op" in auth_body.lower() or "op " in auth_body.lower():
+							send_priv(auth_user,"Op a user in a channel. Note this is more temporary and *not* the same as setting a chanop.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " op <user> <channel>")
+
+						elif " deop" in auth_body.lower() or "deop " in auth_body.lower():
+							send_priv(auth_user,"Deop a user in a channel.  Note this does not remove chanop status.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " deop <user> <channel>")
+
+						elif " deop" in auth_body.lower() or "deop " in auth_body.lower():
+							send_priv(auth_user,"Deop a user in a channel.  Note this does not remove chanop status.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " deop <user> <channel>")
+
+						elif " say" in auth_body.lower() or "say " in auth_body.lower():
+							send_priv(auth_user,"Have me say something to a user or channel.  Currently, I refuse to talk to nickserv or chanserv with this command.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " say <user or channel> <message>")
+
 						# Sent just the word "help."  Send full help text.
-						elif auth_body.lower()=="help":																																																																																																																													
-							send_priv(auth_user,"Hi there! I got a lot smarter last night, but none of my shit works yet.")
-							send_priv(auth_user,"Things I will do: ban, unban, invite, chanmaster, chanop, member")
+
+
+						elif auth_body.lower()=="help":
+							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, say")
 							send_priv(auth_user,"Type /msg " + botnick + " help <command> or /msg " + botnick + " <command> help for usage. If you don't include a topic and type /msg " + botnick + " help, you get this again.")
 							send_priv(auth_user,"If you type something like \"/msg " + botnick + " help my house is burning down\", since none of those words are topics, you'll get this again.")
 							time.sleep(3)
@@ -601,8 +624,7 @@ while True:
 						# or a charm message. Repeat above help.
 						else:
 							send_priv(auth_user,"I didn't understand those extra words. Here's regular help again.")
-							send_priv(auth_user,"Hi there! I got a lot smarter last night, but none of my shit works yet.")
-							send_priv(auth_user,"Things I will do: ban, unban, invite, chanmaster, chanop, member")
+							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, say")
 							send_priv(auth_user,"Type /msg " + botnick + " help <command> or /msg " + botnick + " <command> help for usage. If you don't include a topic and type /msg " + botnick + " help, you get this again.")
 							send_priv(auth_user,"If you type something like \"/msg " + botnick + " help my house is burning down\", since none of those words are topics, you'll get this again.")
 							time.sleep(3)
@@ -612,16 +634,80 @@ while True:
 							time.sleep(5)
 							send_priv(auth_user,"(This means you, " + auth_user + ".)")
 
+					elif auth_body_words[0] == "unban":
+						if is_command:
+							unban_user(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Unbanning " + auth_body_words[1] + " from " + auth_body_words[2])
+
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help unban for usage.")
+
+					elif auth_body_words[0].lower() == "ban":
+						if is_command:
+							ban_user(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Banning " + auth_body_words[1] + " from " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help ban for usage.")
+
+					elif auth_body_words[0].lower() == "invite":
+						if is_command:
+							invite(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Inviting " + auth_body_words[1] + " to " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help invite for usage.")
+
+					elif auth_body_words[0].lower() == "chanmaster":
+						if is_command:
+							set_master(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Setting " + auth_body_words[1] + " as channel master in " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help chanmaster for usage.")
+
+					elif auth_body_words[0].lower() == "chanop":
+						if is_command:
+							set_chanop(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Setting " + auth_body_words[1] + " as channel operator in " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help chanop for usage.")
+
+					elif auth_body_words[0].lower() == "member":
+						if is_command:
+							set_member(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Setting " + auth_body_words[1] + " as channel member in " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help member for usage.")
+
+					elif auth_body_words[0].lower() == "kick":
+						if is_command:
+							kick_user(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Kicking " + auth_body_words[1] + " from " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help kick for usage.")
+
+					elif auth_body_words[0].lower() == "op":
+						if is_command:
+							op_user(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Granting temporary ops to " + auth_body_words[1] + " in " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help op for usage.")
+
+					elif auth_body_words[0].lower() == "deop":
+						if is_command:
+							deop_user(auth_body_words[1],auth_body_words[2])
+							send_priv(auth_user,"Revoking temporary ops from " + auth_body_words[1] + " in " + auth_body_words[2])
+						else:
+							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help deop for usage.")
+
+					elif auth_body_words[0].lower() == "say":
+						if auth_body_words[1].lower() == "chanserv" or auth_body_words[1].lower() == "nickserv":
+							send_priv(auth_user,"Use the other commands for that kind of talk.  No bypassing my hijinx, you! (Good try though.)")
+						else:
+							send_priv(auth_body_words[1],auth_body[auth_body.find(auth_body_words[2]):])
+							send_priv(auth_user,"Saying \"" + auth_body[auth_body.find(auth_body_words[2]):] + "\" to " + auth_body_words[1])
 					# They sent something that didn't include help or
 					# a charm message.  Commands not implemented yet.
 					else:
-						send_priv(auth_user,"You should try sending \"/msg " + botnick + " help!\"")
-						time.sleep(.3)
-						send_priv(auth_user,"If you're trying to do one of those things")
-						time.sleep(.3)
-						send_priv(auth_user,"I said I could do, don't.")
-						time.sleep(.3)
-						send_priv(auth_user,"I lied, they don't work. Sue me.")
+						send_priv(auth_user,"You should try sending \"/msg " + botnick + " help\"!")
 
 					#Reset auth variables.
 					auth_requested=0
@@ -635,7 +721,6 @@ while True:
 
 
 
-
 		# Respond to PINGs.
 		# If this sequence containts the word "PING", send back "PONG" with the word that followed it.
 		# Split uses whitespace to delimit words.
@@ -644,7 +729,7 @@ while True:
 			irc.send(bytes("PONG " + nice_text.split() [1] + "\r\n", "UTF-8"))
 			# Debugging output.
 			if debugging:
-				print("Received PING, responding with:")
+				print("\nReceived PING, responding with:")
 				print("PONG " + nice_text.split() [1] + "\n")
 
 	# Store exception for sequence in error_message and print if debugging is true.
