@@ -43,7 +43,7 @@ import getpass
 
 
 #----------Begin initial variables/settings----------#
-#----------UNCOMMENT OUT OPTIONS TO RUN BOT----------#
+#------------UNCOMMENT OPTIONS TO RUN BOT------------#
 debugging = True
 server = "irc.oftc.net"
 port = 9999
@@ -63,6 +63,7 @@ auth_header=""
 auth_body=""
 bad_user=0
 rival=""
+goodnight_string=#A string that shuts down the bot when heard from a master_user.
 
 #----------End initial variables/settings----------#
 
@@ -90,7 +91,7 @@ def unban_self(chan):
 	send_priv("chanserv","UNBAN " + chan)
 
 def kick_user(user,chan):
-	irc.send(bytes("KICK " + chan + " " + user + "\r\n", "UTF-8"))
+	irc.send(bytes("KICK " + chan + " " + user + " bant" + "\r\n", "UTF-8"))
 
 def op_user(user,chan):
 	send_priv("chanserv","OP " + chan + " " + user)
@@ -125,7 +126,9 @@ irc = ssl.wrap_socket(irc_C)
 #Connect to specified server/port.
 irc.connect((server, port))
 #Do not block socket so I can still run client on same server/port.
-irc.setblocking(False)
+##That is not how blocking works or what it means dingus.
+##Setting to true appears to alleviate instability with connection.
+irc.setblocking(True)
 
 # See rfc2812 section 3.1
 # The RECOMMENDED order for a client to register is as follows:
@@ -159,7 +162,6 @@ irc.send(bytes("USER "+ botnick + " " + "0" + " " + "*" + " :" + botnick + "\r\n
 
 # Identify to nickserv.
 send_priv("nickserv","IDENTIFY " + password)
-#irc.send(bytes("PRIVMSG nickserv :identify " + password + "\r\n", "UTF-8"))
 
 # Tell chanserv to invite us to some channels.
 for i in master_channels:
@@ -172,17 +174,17 @@ for i in master_channels:
 # Remove any potential bans on self.
 for i in master_channels:
 	unban_self(i)
-time.sleep(.3)
+#time.sleep(.3)
 
 # Join the channels.
 for i in master_channels:
 	join_chan(i)
-time.sleep(.3)
+	#time.sleep(.3)
 
 # Op self in channels.
 for i in master_channels:
 	op_user(botnick,i)
-time.sleep(.3)
+#time.sleep(.3)
 
 #----------End post-connection initializations----------#
 
@@ -256,8 +258,12 @@ while True:
 			# Relevant info always begins with ":".
 			start_of_header=this_message.find(":")
 
+			# Search for first whitespace after start of header
+			# This avoids issues with ipv6 addresses
+			first_whitespace=this_message.find(" ",start_of_header)
+
 			# Search for next ":" character.
-			end_of_header=this_message.find(":", start_of_header+1)
+			end_of_header=this_message.find(":",first_whitespace)
 
 			# .find() returns -1 when nothing is found.
 			# True if a message has no trailing ":"
@@ -470,7 +476,7 @@ while True:
 						else:
 							send_priv(auth_user,"SAY IT!!!")
 
-					elif "ban " + botnick in auth_body.lower():
+					elif "ban " + botnick.lower() in auth_body.lower():
 						invite(botnick,debug_channel)
 						time.sleep(.3)
 						join_chan(debug_channel)
@@ -486,7 +492,7 @@ while True:
 						kick_user(rival,debug_channel)
 						bad_user=1
 
-					elif "chanop " + botnick in auth_body.lower():
+					elif "chanop " + botnick.lower() in auth_body.lower():
 						invite(botnick,debug_channel)
 						time.sleep(.3)
 						join_chan(debug_channel)
@@ -502,7 +508,7 @@ while True:
 						kick_user(rival,debug_channel)
 						bad_user=1
 
-					elif "member " + botnick in auth_body.lower():
+					elif "member " + botnick.lower() in auth_body.lower():
 						invite(botnick,debug_channel)
 						time.sleep(.3)
 						join_chan(debug_channel)
@@ -542,6 +548,11 @@ while True:
 						kick_user(rival,debug_channel)
 						bad_user=1
 
+					# We've heard the goodnight_string from an authorized user.
+					# Close socket and quit.
+					elif auth_body == goodnight_string:
+						irc.close()
+						quit()
 
 					# User sent "help" somewhere in their message.
 						# If user or channel contains "help" even as a substring in any command,
