@@ -429,9 +429,6 @@ while True:
 
 					is_command = len(auth_body_words)==3
 
-
-
-
 					#----------Begin teasing rival----------#
 					if bad_user==1:
 						if auth_body=="I'm sorry I was an ass.":
@@ -526,6 +523,7 @@ while True:
 
 
 
+
 					# User did precisely the only thing we told them not to do.
 					elif auth_body == "help my house is burning down":
 						send_priv(auth_user,"That's hilarious. You're hilarious.")
@@ -597,15 +595,19 @@ while True:
 							send_priv(auth_user,"Deop a user in a channel.  Note this does not remove chanop status.")
 							send_priv(auth_user,"Syntax: /msg " + botnick + " deop <user> <channel>")
 
-						elif " say" in auth_body.lower() or "say " in auth_body.lower():
-							send_priv(auth_user,"Have me say something to a user or channel.  Currently, I refuse to talk to nickserv or chanserv with this command.")
-							send_priv(auth_user,"Syntax: /msg " + botnick + " say <user or channel> <message>")
+						elif " deop" in auth_body.lower() or "deop " in auth_body.lower():
+							send_priv(auth_user,"Deop a user in a channel.  Note this does not remove chanop status.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " deop <user> <channel>")
+
+						elif " tell" in auth_body.lower() or "tell " in auth_body.lower():
+							send_priv(auth_user,"Have me tell something to a user or channel.  Currently, I refuse to talk to nickserv or chanserv with this command.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " tell <user or channel> <message>")
 
 						# Sent just the word "help."  Send full help text.
 
 
 						elif auth_body.lower()=="help":
-							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, say")
+							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, tell")
 							send_priv(auth_user,"Type /msg " + botnick + " help <command> or /msg " + botnick + " <command> help for usage. If you don't include a topic and type /msg " + botnick + " help, you get this again.")
 							send_priv(auth_user,"If you type something like \"/msg " + botnick + " help my house is burning down\", since none of those words are topics, you'll get this again.")
 							time.sleep(3)
@@ -619,7 +621,7 @@ while True:
 						# or a charm message. Repeat above help.
 						else:
 							send_priv(auth_user,"I didn't understand those extra words. Here's regular help again.")
-							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, say")
+							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, tell")
 							send_priv(auth_user,"Type /msg " + botnick + " help <command> or /msg " + botnick + " <command> help for usage. If you don't include a topic and type /msg " + botnick + " help, you get this again.")
 							send_priv(auth_user,"If you type something like \"/msg " + botnick + " help my house is burning down\", since none of those words are topics, you'll get this again.")
 							time.sleep(3)
@@ -633,7 +635,6 @@ while True:
 						if is_command:
 							unban_user(auth_body_words[1],auth_body_words[2])
 							send_priv(auth_user,"Unbanning " + auth_body_words[1] + " from " + auth_body_words[2])
-
 						else:
 							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help unban for usage.")
 
@@ -676,8 +677,6 @@ while True:
 						if is_command:
 							kick_user(auth_body_words[1],auth_body_words[2])
 							send_priv(auth_user,"Kicking " + auth_body_words[1] + " from " + auth_body_words[2])
-						else:
-							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help kick for usage.")
 
 					elif auth_body_words[0].lower() == "op":
 						if is_command:
@@ -693,12 +692,18 @@ while True:
 						else:
 							send_priv(auth_user,"Command not formatted properly.  Send /msg " + botnick + " help deop for usage.")
 
-					elif auth_body_words[0].lower() == "say":
+					elif auth_body_words[0].lower() == "tell":
 						if auth_body_words[1].lower() == "chanserv" or auth_body_words[1].lower() == "nickserv":
 							send_priv(auth_user,"Use the other commands for that kind of talk.  No bypassing my hijinx, you! (Good try though.)")
 						else:
-							send_priv(auth_body_words[1],auth_body[auth_body.find(auth_body_words[2]):])
-							send_priv(auth_user,"Saying \"" + auth_body[auth_body.find(auth_body_words[2]):] + "\" to " + auth_body_words[1])
+							# Made these lines even more hideous, but important.
+							# Previous implementation was thoughtless, if auth_body_words[2]
+							# was a substring of anything before it, it began the "message"
+							# to send there.  This fixes issue.
+							#TODO Clean these lines up/make more readable.
+							send_priv(auth_body_words[1],auth_body[auth_body.find(auth_body_words[1])+len(auth_body_words[1])+1:])
+							send_priv(auth_user,"Telling " + auth_body_words[1] + " \"" + auth_body[auth_body.find(auth_body_words[1])+len(auth_body_words[1])+1:] + "\"")
+
 					# They sent something that didn't include help or
 					# a charm message.  Commands not implemented yet.
 					else:
