@@ -12,7 +12,7 @@
 #TODO Review method of sending bytes, consider function.
 #TODO Consider replacing auth help etc with proper argument handling function.
 #TODO Turn some of the offense/defense of teasing into functions.
-
+#TODO Fix "tell."  If the destination is a substring of the command, message is incorrect.
 
 
 
