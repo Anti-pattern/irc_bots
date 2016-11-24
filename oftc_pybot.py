@@ -66,19 +66,56 @@ goodnight_string=#A string that shuts down the bot when heard from a master_user
 
 #----------End initial variables/settings----------#
 
+# Time to objectify some users!
+class ircuser:
+	def __init__(self,name):
+		self.name = name
+		self.nicks = []
+		self.q_messages = []
 
+# Eventually move dictionary to file which we can store/encrypt etc.
+users = {}
 
 #----------Begin functions----------#
 
-def send_priv(p_channel, p_msg):
-	irc.send(bytes("PRIVMSG "+p_channel+" :"+p_msg+"\r\n", "UTF-8"))
+def add_ircuser(name):
+# Adds key of name to users dictionary with the value of a user object.
+#
+# Note: users.get() returns None if key not found.
+# If you try to test on a users[] that doesn't exist,
+# you will get a KeyError instead.
+	if users.get(name):
+		print("User already exists!")
+	else:
+		users[name] = ircuser(name)
+
+def queue_message(user,message):
+	add_ircuser(user)
+	users[user].q_messages.append(message)
+
+
+# Pop doesn't seem to function as expected,
+# Find best way to clear
+def send_queue(user):
+	if len(users[user].q_messages) > 0:
+		for i in users[user].q_messages:
+			send_priv(user,i)
+		users[user].q_messages=[]
+	else:
+		send_priv(user,"No new messages!")
+
+def has_q_messages(user):
+	if len(users[user].q_messages) > 0:
+		return True
+	return False
+
+def send_priv(chan, msg):
+	irc.send(bytes("PRIVMSG "+chan+" :"+msg+"\r\n", "UTF-8"))
+
 
 def join_chan(chan):
 	irc.send(bytes("JOIN "+chan+"\r\n", "UTF-8"))
 
-# These evidently do not always function as intended.
-# Possible issue with how they were being called in
-# depreciated routine.
 def ban_user(user,chan):
 	irc.send(bytes("MODE " + chan + " +b " + user + "\r\n", "UTF-8"))
 
@@ -214,9 +251,10 @@ while True:
 		# Console debugging output.
 		if debugging:
 			print("====================NEW BUFFER====================")
+			print(sequence)
 			print("Byte print() is:")
 			print(byte_text)
-			print("\n\n")
+			print("\n")
 
 		# Place distinct messages into an array.
 		# Messages always end in "\r\n".
@@ -603,11 +641,19 @@ while True:
 							send_priv(auth_user,"Have me tell something to a user or channel.  Currently, I refuse to talk to nickserv or chanserv with this command.")
 							send_priv(auth_user,"Syntax: /msg " + botnick + " tell <user or channel> <message>")
 
+						elif " queue" in auth_body.lower() or "queue " in auth_body.lower():
+							send_priv(auth_user,"Have me store a message for another user to read later with \"retrieve\" when they're online.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " queue <user> <message>")
+
+						elif " retrieve" in auth_body.lower() or "retrieve " in auth_body.lower():
+							send_priv(auth_user,"Retrieve all messages queued for you with the \"queue\" command.")
+							send_priv(auth_user,"Syntax: /msg " + botnick + " retrieve")
+
 						# Sent just the word "help."  Send full help text.
 
 
 						elif auth_body.lower()=="help":
-							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, tell")
+							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, tell, queue, retrieve")
 							send_priv(auth_user,"Type /msg " + botnick + " help <command> or /msg " + botnick + " <command> help for usage. If you don't include a topic and type /msg " + botnick + " help, you get this again.")
 							send_priv(auth_user,"If you type something like \"/msg " + botnick + " help my house is burning down\", since none of those words are topics, you'll get this again.")
 							time.sleep(3)
@@ -621,7 +667,7 @@ while True:
 						# or a charm message. Repeat above help.
 						else:
 							send_priv(auth_user,"I didn't understand those extra words. Here's regular help again.")
-							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, tell")
+							send_priv(auth_user,"Things I can do: ban, unban, invite, kick, op, deop, chanmaster, chanop, member, tell, queue, retrieve")
 							send_priv(auth_user,"Type /msg " + botnick + " help <command> or /msg " + botnick + " <command> help for usage. If you don't include a topic and type /msg " + botnick + " help, you get this again.")
 							send_priv(auth_user,"If you type something like \"/msg " + botnick + " help my house is burning down\", since none of those words are topics, you'll get this again.")
 							time.sleep(3)
@@ -703,6 +749,16 @@ while True:
 							#TODO Clean these lines up/make more readable.
 							send_priv(auth_body_words[1],auth_body[auth_body.find(auth_body_words[1])+len(auth_body_words[1])+1:])
 							send_priv(auth_user,"Telling " + auth_body_words[1] + " \"" + auth_body[auth_body.find(auth_body_words[1])+len(auth_body_words[1])+1:] + "\"")
+
+					elif auth_body_words[0].lower() == "queue":
+						len_before_message=len(auth_body_words[0])+len(auth_body_words[1])+2
+						queue_message(auth_body_words[1],auth_body[len_before_message:])
+						send_priv(auth_user,"Queueing message \""+auth_body[len_before_message:]+"\" for user "+auth_body_words[1])
+
+					elif auth_body_words[0].lower() == "retrieve":
+						print("Retrieving message.")
+						send_queue(auth_user)
+						print("Retrieved.")
 
 					# They sent something that didn't include help or
 					# a charm message.  Commands not implemented yet.
